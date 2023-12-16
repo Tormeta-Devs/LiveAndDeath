@@ -1,27 +1,17 @@
+# plugin.yml
 name: JTunLiveAndDeath
-version: 0.2.1
+version: 1.0
+description: A Minecraft Bukkit plugin for Live and Death mechanics
 main: com.juanegameryt.jtunliveanddeath.LiveAndDeath
-api-version: 1.16
 author: JuanEGamerYT
-description: Un plugin de Minecraft para Live and Death con funcionalidades especiales.
 
 commands:
   liveanddeath:
-    description: Comandos principales de Live and Death.
-    usage: /liveanddeath <subcomando>
-    aliases: [ldd]
+    description: Main command for LiveAndDeath
+    usage: /<command> [add/remove/help]
 
-permissions:
-  liveanddeath.admin:
-    description: Permite a los administradores usar comandos de Live and Death.
-    default: op
+  ldd:
+    description: Alias for /liveanddeath
+    usage: /<command> [add/remove/help]
 
-placeholders:
-  fragmentos_conseguidos:
-    description: Muestra la cantidad de fragmentos recolectados por el jugador.
-  fragmentos_necesarios:
-    description: Muestra la cantidad de fragmentos necesarios para escapar.
-  players_desterrados:
-    description: Muestra la cantidad de jugadores en el mundo desterrado.
-  ultima_mena:
-    description: Muestra las coordenadas de la última mena de esmeralda generada.
+config-version: 1

@@ -1,0 +1,10 @@
+# config.yml
+locale: es # Puedes cambiarlo a "en" según sea necesario
+
+coord_z:
+  min: 0
+  max: 100
+
+coord_x:
+  min: 0
+  max: 100

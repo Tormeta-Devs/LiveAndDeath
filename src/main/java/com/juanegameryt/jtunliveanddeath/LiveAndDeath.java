@@ -1,9 +1,7 @@
 package com.juanegameryt.jtunliveanddeath;
-import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.*;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -12,36 +10,92 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-public class LiveAndDeath extends JavaPlugin implements Listener, CommandExecutor {
+public class LiveAndDeath extends JavaPlugin implements Listener {
 
     private Map<String, Integer> fragmentCountMap = new HashMap<>();
-    private int maxX = 4000;
-    private int minX = 0;
-    private int maxZ = 4000;
-    private int minZ = 0;
+    private int maxX;
+    private int minX;
+    private int maxZ;
+    private int minZ;
     private Location lastEmeraldLocation;
+    private String locale;
 
     @Override
     public void onEnable() {
-        getLogger().info("[JTunCraft] El plugin LivesAndDeath se ha activado! ¡Suerte con la muerte!");
-        getServer().getPluginManager().registerEvents(this, this);
-        getCommand("liveanddeath").setExecutor(this);
-        getCommand("ldd").setExecutor(this);
+        try {
+            getLogger().info("[JTunCraft] El plugin LivesAndDeath se ha activado! ¡Suerte con la muerte!");
+            getServer().getPluginManager().registerEvents(this, this);
+            getCommand("liveanddeath").setExecutor(this);
+            getCommand("ldd").setExecutor(this);
 
-        // Registrar la expansión de PlaceholderAPI
-        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new LiveAndDeathExpansion(this).register();
+            // Iniciar la generación aleatoria de menas de esmeralda con valores predeterminados
+            loadConfigurations();
+            startRandomEmeraldOreGeneration();
+
+            // Buscar el plugin "Multiverse Core"
+            Plugin multiverseCorePlugin = Bukkit.getPluginManager().getPlugin("Multiverse-Core");
+            if (multiverseCorePlugin != null && multiverseCorePlugin.isEnabled()) {
+                getLogger().info("¡Se encontró y registró Multiverse Core!");
+
+                // Verificar la existencia del mundo "desterrado" en Multiverse Core
+                if (Bukkit.getWorld("desterrado") == null) {
+                    getLogger().info("El mundo 'desterrado' no existe. Creando el mundo...");
+                    getServer().dispatchCommand(getServer().getConsoleSender(), "mv create desterrado nether");
+                }
+            } else {
+                getLogger().warning("No se encontró o no está habilitado Multiverse Core. Algunas funciones pueden no estar disponibles.");
+            }
+
+            // Cargar el locale desde config.yml
+            this.locale = getConfig().getString("locale", "en").toLowerCase();
+
+            // Verificar y cargar el archivo de mensajes correspondiente al locale
+            File messagesFile = new File(getDataFolder(), locale + ".yml");
+            if (!messagesFile.exists()) {
+                saveResource(locale + ".yml", false);
+            }
+
+            // Comprobar PlaceholderAPI e Inicializarlo
+            Plugin placeholderAPIPlugin = Bukkit.getPluginManager().getPlugin("PlaceholderAPI");
+            if (placeholderAPIPlugin != null && placeholderAPIPlugin.isEnabled()) {
+                new LivesAndDeathExpansion(this).register();
+                getLogger().info("¡Se encontró y registró PlaceholderAPI!");
+            } else {
+                getLogger().warning("No se encontró o no está habilitado PlaceholderAPI. La expansión no se registrará.");
+            }
+
+        } catch (Exception e) {
+            getLogger().severe("Error during plugin initialization: " + e.getMessage());
+            e.printStackTrace();
+            getServer().getPluginManager().disablePlugin(this);
         }
+    }
 
-        // Iniciar la generación aleatoria de menas de esmeralda con valores predeterminados
-        startRandomEmeraldOreGeneration();
+
+    private void loadConfigurations() {
+        getConfig().options().copyDefaults(true);
+        saveDefaultConfig();
+
+        // Cargar las configuraciones
+        int minZ = getConfig().getInt("coord_z.min", 0);
+        int maxZ = getConfig().getInt("coord_z.max", 100);
+        int minX = getConfig().getInt("coord_x.min", 0);
+        int maxX = getConfig().getInt("coord_x.max", 100);
+
+        // Asegurarse de que los valores sean válidos y ajustarlos según sea necesario
+        this.minZ = Math.min(minZ, maxZ);
+        this.maxZ = Math.max(minZ, maxZ);
+        this.minX = Math.min(minX, maxX);
+        this.maxX = Math.max(minX, maxX);
     }
 
     @EventHandler   
@@ -160,60 +214,35 @@ public class LiveAndDeath extends JavaPlugin implements Listener, CommandExecuto
     }
 
     // Clase de expansión de PlaceholderAPI
-    public static class LiveAndDeathExpansion extends PlaceholderExpansion {
+    public class LivesAndDeathExpansion extends PlaceholderExpansion {
 
         private final LiveAndDeath plugin;
-
-        public LiveAndDeathExpansion(LiveAndDeath plugin) {
+    
+        public LivesAndDeathExpansion(LiveAndDeath plugin) {
             this.plugin = plugin;
         }
-
-        @Override
-        public boolean persist() {
-            return true;
-        }
-
-        @Override
-        public boolean canRegister() {
-            return true;
-        }
-
-        @Override
-        public String getAuthor() {
-            return "JuanEGamerYT";
-        }
-
-        @Override
-        public String getIdentifier() {
-            return "liveanddeath";
-        }
-
-        @Override
-        public String getVersion() {
-            return plugin.getDescription().getVersion();
-        }
-
+    
         @Override
         public String onPlaceholderRequest(Player player, String identifier) {
             if (player == null) {
-                return "";
+                return null;
             }
-
-            if (identifier.equals("fragmentos_conseguidos")) {
-                // Obtener la cantidad de fragmentos que ha recolectado el jugador
-                return String.valueOf(plugin.fragmentCountMap.getOrDefault(player.getName(), 0));
-            }
-
+    
             if (identifier.equals("fragmentos_necesarios")) {
                 // Definir la cantidad necesaria de fragmentos (en este caso, 8)
                 return "8";
             }
-
+    
+            if (identifier.equals("fragmentos_conseguidos")) {
+                // Obtener la cantidad de fragmentos que ha recolectado el jugador
+                return String.valueOf(plugin.fragmentCountMap.getOrDefault(player.getName(), 0));
+            }
+    
             if (identifier.equals("players_desterrados")) {
                 // Obtener la cantidad de jugadores en el mundo desterrado
                 return String.valueOf(Bukkit.getWorld("desterrado").getPlayers().size());
             }
-
+    
             if (identifier.equals("ultima_mena")) {
                 // Obtener las coordenadas de la última mena generada
                 if (plugin.lastEmeraldLocation != null) {
@@ -224,63 +253,31 @@ public class LiveAndDeath extends JavaPlugin implements Listener, CommandExecuto
                     return "N/A";
                 }
             }
-
+    
             return null;
         }
+    
+        @Override
+        public String getAuthor() {
+            return "JuanEGamerYT";
+        }
+    
+        @Override
+        public String getIdentifier() {
+            return "liveanddeath";
+        }
+    
+        @Override
+        public String getVersion() {
+            return plugin.getDescription().getVersion();
+        }
     }
+    
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length > 0) {
-            if (args[0].equalsIgnoreCase("xmax")) {
-                if (args.length > 1) {
-                    try {
-                        maxX = Integer.parseInt(args[1]);
-                        sender.sendMessage(ChatColor.GREEN + "XMax configurado a " + maxX);
-                    } catch (NumberFormatException e) {
-                        sender.sendMessage(ChatColor.RED + "Error: La entrada debe ser un número entero.");
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Error: Se requiere un valor para XMax.");
-                }
-                return true;
-            } else if (args[0].equalsIgnoreCase("xmin")) {
-                if (args.length > 1) {
-                    try {
-                        minX = Integer.parseInt(args[1]);
-                        sender.sendMessage(ChatColor.GREEN + "XMin configurado a " + minX);
-                    } catch (NumberFormatException e) {
-                        sender.sendMessage(ChatColor.RED + "Error: La entrada debe ser un número entero.");
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Error: Se requiere un valor para XMin.");
-                }
-                return true;
-            } else if (args[0].equalsIgnoreCase("zmax")) {
-                if (args.length > 1) {
-                    try {
-                        maxZ = Integer.parseInt(args[1]);
-                        sender.sendMessage(ChatColor.GREEN + "ZMax configurado a " + maxZ);
-                    } catch (NumberFormatException e) {
-                        sender.sendMessage(ChatColor.RED + "Error: La entrada debe ser un número entero.");
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Error: Se requiere un valor para ZMax.");
-                }
-                return true;
-            } else if (args[0].equalsIgnoreCase("zmin")) {
-                if (args.length > 1) {
-                    try {
-                        minZ = Integer.parseInt(args[1]);
-                        sender.sendMessage(ChatColor.GREEN + "ZMin configurado a " + minZ);
-                    } catch (NumberFormatException e) {
-                        sender.sendMessage(ChatColor.RED + "Error: La entrada debe ser un número entero.");
-                    }
-                } else {
-                    sender.sendMessage(ChatColor.RED + "Error: Se requiere un valor para ZMin.");
-                }
-                return true;
-            } else if (args[0].equalsIgnoreCase("add")) {
+            if (args[0].equalsIgnoreCase("add")) {
                 if (args.length > 2) {
                     Player target = Bukkit.getPlayer(args[1]);
                     if (target != null) {
@@ -290,6 +287,7 @@ public class LiveAndDeath extends JavaPlugin implements Listener, CommandExecuto
                             fragmentCountMap.put(target.getName(), currentCount + count);
                             sender.sendMessage(ChatColor.GREEN + "Fragmentos añadidos a " + target.getName() + ": " + count);
                             target.sendMessage(ChatColor.GREEN + "Se te han añadido fragmentos: " + count);
+                            return true;
                         } catch (NumberFormatException e) {
                             sender.sendMessage(ChatColor.RED + "Error: La entrada debe ser un número entero.");
                         }
@@ -299,7 +297,6 @@ public class LiveAndDeath extends JavaPlugin implements Listener, CommandExecuto
                 } else {
                     sender.sendMessage(ChatColor.RED + "Error: Uso incorrecto. /liveanddeath add (jugador) (cantidad)");
                 }
-                return true;
             } else if (args[0].equalsIgnoreCase("remove")) {
                 if (args.length > 2) {
                     Player target = Bukkit.getPlayer(args[1]);
@@ -311,6 +308,7 @@ public class LiveAndDeath extends JavaPlugin implements Listener, CommandExecuto
                             fragmentCountMap.put(target.getName(), newCount);
                             sender.sendMessage(ChatColor.GREEN + "Fragmentos eliminados a " + target.getName() + ": " + count);
                             target.sendMessage(ChatColor.GREEN + "Se te han eliminado fragmentos: " + count);
+                            return true;
                         } catch (NumberFormatException e) {
                             sender.sendMessage(ChatColor.RED + "Error: La entrada debe ser un número entero.");
                         }
@@ -320,20 +318,15 @@ public class LiveAndDeath extends JavaPlugin implements Listener, CommandExecuto
                 } else {
                     sender.sendMessage(ChatColor.RED + "Error: Uso incorrecto. /liveanddeath remove (jugador) (cantidad)");
                 }
-                return true;
             } else if (args[0].equalsIgnoreCase("help")) {
                 sender.sendMessage(ChatColor.GREEN + "Comandos de LiveAndDeath:");
-                sender.sendMessage(ChatColor.GREEN + "/liveanddeath xmax (numero) - Configura XMax para generación de menas.");
-                sender.sendMessage(ChatColor.GREEN + "/liveanddeath xmin (numero) - Configura XMin para generación de menas.");
-                sender.sendMessage(ChatColor.GREEN + "/liveanddeath zmax (numero) - Configura ZMax para generación de menas.");
-                sender.sendMessage(ChatColor.GREEN + "/liveanddeath zmin (numero) - Configura ZMin para generación de menas.");
-                sender.sendMessage(ChatColor.GREEN + "/liveanddeath add (jugador) (cantidad) - Añade fragmentos a un jugador.");
-                sender.sendMessage(ChatColor.GREEN + "/liveanddeath remove (jugador) (cantidad) - Elimina fragmentos a un jugador.");
-                sender.sendMessage(ChatColor.GREEN + "/ldd (comandos abreviados).");
+                sender.sendMessage(ChatColor.GREEN + "/liveanddeath and /ldd add (jugador) (cantidad) - Añade fragmentos a un jugador.");
+                sender.sendMessage(ChatColor.GREEN + "/liveanddeath and /ldd remove (jugador) (cantidad) - Elimina fragmentos a un jugador.");
                 return true;
             }
         }
         sender.sendMessage(ChatColor.RED + "Error: Comando desconocido o incorrecto. Usa /liveanddeath help para obtener ayuda.");
         return true;
     }
+
 }

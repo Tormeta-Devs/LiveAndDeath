@@ -1,4 +1,5 @@
 # en.yml
+# English Version
 messages:
   death:
     lost_fragments: '&cYou lost! Fragments have been reset, better luck next time.'

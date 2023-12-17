@@ -1,4 +1,6 @@
 package com.juanegameryt.jtunliveanddeath;
+
+// Imports
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.*;
 import org.bukkit.command.Command;
@@ -13,7 +15,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;

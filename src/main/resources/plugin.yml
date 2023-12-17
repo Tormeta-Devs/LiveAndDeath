@@ -1,6 +1,6 @@
 # plugin.yml
 name: JTunLiveAndDeath
-version: 1.0
+version: 2.2
 description: A Minecraft Bukkit plugin for Live and Death mechanics
 main: com.juanegameryt.jtunliveanddeath.LiveAndDeath
 author: JuanEGamerYT

@@ -1,4 +1,5 @@
 # es.yml
+# Spanish Version
 messages:
   death:
     lost_fragments: '&c¡Has perdido! Los fragmentos se reiniciaron, suerte la próxima.'

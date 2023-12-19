@@ -1,0 +1,17 @@
+# plugin.yml
+name: JTunLiveAndDeath
+version: 2.2
+description: A Minecraft Bukkit plugin for Live and Death mechanics
+main: com.juanegameryt.jtunliveanddeath.LiveAndDeath
+author: JuanEGamerYT
+
+commands:
+  liveanddeath:
+    description: Main command for LiveAndDeath
+    usage: /<command> [add/remove/help]
+
+  ldd:
+    description: Alias for /liveanddeath
+    usage: /<command> [add/remove/help]
+
+config-version: 1

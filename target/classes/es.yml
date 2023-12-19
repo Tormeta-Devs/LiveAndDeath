@@ -1,0 +1,14 @@
+# es.yml
+# Spanish Version
+messages:
+  death:
+    lost_fragments: '&c¡Has perdido! Los fragmentos se reiniciaron, suerte la próxima.'
+    saved: '&cSalvado. ¡Te encuentras a salvo!'
+    underworld: '&5Inframundo. ¡Has sido desterrado!'
+  respawn:
+    welcome_back: '&a¡Bienvenido de vuelta!'
+  block_break:
+    fragments_collected: '&aFragmentos: %count%/8'
+    collected_enough: '&a¡Has recolectado suficientes fragmentos! Teletransportándote al mundo principal.'
+  creation:
+    desterrado_created: '&aEl mundo "desterrado" ha sido creado exitosamente.'
